@@ -28,7 +28,7 @@ function dragStart(evt) {
   }
 }
 
-function dargOver(evt) {
+function dragOver(evt) {
   if (!matches(evt.target, '.menu, .menu *, .script, .script *, .content')) {
     return;
   }
@@ -43,4 +43,52 @@ function dargOver(evt) {
     evt.dataTransfer.dropEffect = 'move';
   }
   return false;
+}
+
+function drop(evt) {
+  if (!matches(evt.target, '.menu, .menu *, .script, .script *')) {
+    return;
+  }
+  var dropTarget = closest(evt.target, '.script .container, .script .block, .menu, .script');
+  var dropType = 'script';
+  if (matches(dropTarget, '.menu')) {
+    dropType = 'menu';
+  }
+  // stops the browser from redirecting.
+  if (evt.stopPropagation) {
+    evt.stopPropagation();
+  }
+  if (dragType === 'script' && dropType === 'menu') {
+    trigger('blockRemoved', dragTarget.parentElement, dragTarget);
+    dragTarget.parentElement.removeChild(dragTarget);
+  } else if (dragType === 'script' && dropType === 'script') {
+    if (matches(dropTarget, '.block')) {
+      dropTarget.parentElement.insertBefore(dragTarget, dropTarget.nextSibling);
+    } else {
+      dropTarget.insertBefore(dragTarget, dropTarget.firstChildElement);
+    }
+    trigger('blockMoved', dropTarget, dragTarget);
+  } else if (dragType === 'menu' && dropType === 'script') {
+    var newNode = dragTarget.cloneNode(true);
+    newNode.classList.remove('dragging');
+    if (matches(dropTarget, '.block')) {
+      dropTarget.parentElement.insertBefore(newNode, dropTarget.nextSibling);
+    } else {
+      dropTarget.insertBefore(newNode, dropTarget.firstChildElement);
+    }
+    trigger('blockAdded', dropTarget, newNode);
+  }
+}
+
+function _findAndRemoveClass(klass) {
+  var elem = document.querySelector('.' + klass);
+  if (elem) {
+    elem.classList.remove(klass);
+  }
+}
+
+function dragEnd(evt) {
+  _findAndRemoveClass('dragging');
+  _findAndRemoveClass('over');
+  _findAndRemoveClass('next');
 }
